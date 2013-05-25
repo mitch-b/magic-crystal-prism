@@ -13,7 +13,7 @@
  * License for the specific language governing permissions and limitations under
  * the License.
  */
-package com.google.glassware;
+package com.mitchbarry.glassware.magiccrystalprism;
 
 import com.google.api.client.auth.oauth2.Credential;
 import com.google.api.client.googleapis.batch.BatchRequest;
@@ -21,26 +21,26 @@ import com.google.api.client.googleapis.batch.json.JsonBatchCallback;
 import com.google.api.client.googleapis.json.GoogleJsonError;
 import com.google.api.client.googleapis.json.GoogleJsonResponseException;
 import com.google.api.client.http.HttpHeaders;
-import com.google.api.services.mirror.model.Contact;
-import com.google.api.services.mirror.model.MenuItem;
-import com.google.api.services.mirror.model.MenuValue;
-import com.google.api.services.mirror.model.NotificationConfig;
-import com.google.api.services.mirror.model.TimelineItem;
+import com.google.api.services.mirror.model.*;
 import com.google.common.collect.Lists;
+import com.google.glassware.AuthUtil;
+import com.google.glassware.MirrorClient;
+import com.google.glassware.NewUserBootstrapper;
+import com.google.glassware.WebUtil;
 
+import javax.servlet.http.HttpServlet;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Logger;
 
-import javax.servlet.http.HttpServlet;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-
 /**
  * Handles POST requests from index.jsp
- * 
+ *
+ * @author Mitchell Barry - http://plus.google.com/109697731481348133983
  * @author Jenny Murphy - http://google.com/+JennyMurphy
  */
 public class MainServlet extends HttpServlet {
@@ -69,7 +69,7 @@ public class MainServlet extends HttpServlet {
   }
 
   private static final Logger LOG = Logger.getLogger(MainServlet.class.getSimpleName());
-  public static final String CONTACT_NAME = "Java Quick Start";
+  public static final String CONTACT_NAME = "Magic Crystal Prism";
 
   /**
    * Do stuff when buttons on index.jsp are clicked
@@ -81,25 +81,16 @@ public class MainServlet extends HttpServlet {
     Credential credential = AuthUtil.newAuthorizationCodeFlow().loadCredential(userId);
     String message = "";
 
-    if (req.getParameter("operation").equals("insertSubscription")) {
+    if (req.getParameter("operation").equals("userInstall")) {
+        // do our bootstrapping stuff for this user
+        NewUserBootstrapper.bootstrapNewUser(req, userId);
 
-      // subscribe (only works deployed to production)
-      try {
-        MirrorClient.insertSubscription(credential, WebUtil.buildUrl(req, "/notify"), userId,
-            req.getParameter("collection"));
-        message = "Application is now subscribed to updates.";
-      } catch (GoogleJsonResponseException e) {
-        LOG.warning("Could not subscribe " + WebUtil.buildUrl(req, "/notify") + " because "
-            + e.getDetails().toPrettyString());
-        message = "Failed to subscribe. Check your log for details";
-      }
+        message = "Success! Check your Glass device!";
 
-    } else if (req.getParameter("operation").equals("deleteSubscription")) {
+    } else if (req.getParameter("operation").equals("userUninstall")) {
 
-      // subscribe (only works deployed to production)
-      MirrorClient.deleteSubscription(credential, req.getParameter("subscriptionId"));
-
-      message = "Application has been unsubscribed.";
+        //TODO: remove user from system
+        message = "User data removed from system";
 
     } else if (req.getParameter("operation").equals("insertItem")) {
       LOG.fine("Inserting Timeline Item");
