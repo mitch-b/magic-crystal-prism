@@ -7,3 +7,6 @@
 # Maven and build folder defaults #
 web/WEB-INF/lib/*.jar
 out/**
+
+# IntelliJ Workspace Settings #
+.idea/workspace.xml
