@@ -22,32 +22,35 @@ import javax.servlet.http.HttpSession;
 
 /**
  * @author Jenny Murphy - http://google.com/+JennyMurphy
+ *
+ * very slightly modified by:
+ * @author Mitchell Barry - http://plus.google.com/109697731481348133983
  */
 public class WebUtil {
-  /**
-   * Builds a URL relative to this app's root.
-   */
-  public static String buildUrl(HttpServletRequest req, String relativePath) {
-    GenericUrl url = new GenericUrl(req.getRequestURL().toString());
-    url.setRawPath(relativePath);
-    return url.build();
-  }
+    /**
+     * Builds a URL relative to this app's root.
+     */
+    public static String buildUrl(HttpServletRequest req, String relativePath) {
+        GenericUrl url = new GenericUrl(req.getRequestURL().toString());
+        url.setRawPath(relativePath);
+        return url.build();
+    }
 
-  /**
-   * A simple flash implementation for text messages across requests
-   * 
-   * @param request
-   * @return
-   */
-  public static String getClearFlash(HttpServletRequest request) {
-    HttpSession session = request.getSession();
-    String flash = (String) session.getAttribute("flash");
-    session.removeAttribute("flash");
-    return flash;
-  }
+    /**
+     * A simple flash implementation for text messages across requests
+     *
+     * @param request
+     * @return
+     */
+    public static String getClearFlash(HttpServletRequest request) {
+        HttpSession session = request.getSession();
+        String flash = (String) session.getAttribute("flash");
+        session.removeAttribute("flash");
+        return flash;
+    }
 
-  public static void setFlash(HttpServletRequest request, String flash) {
-    HttpSession session = request.getSession();
-    session.setAttribute("flash", flash);
-  }
+    public static void setFlash(HttpServletRequest request, String flash) {
+        HttpSession session = request.getSession();
+        session.setAttribute("flash", flash);
+    }
 }

@@ -40,165 +40,174 @@ import java.util.logging.Logger;
 /**
  * Handles POST requests from index.jsp
  *
- * @author Mitchell Barry - http://plus.google.com/109697731481348133983
  * @author Jenny Murphy - http://google.com/+JennyMurphy
+ *
+ * very slightly modified by:
+ * @author Mitchell Barry - http://plus.google.com/109697731481348133983
  */
 public class MainServlet extends HttpServlet {
 
-  /**
-   * Private class to process batch request results.
-   * 
-   * For more information, see
-   * https://code.google.com/p/google-api-java-client/wiki/Batch.
-   */
-  private final class BatchCallback extends JsonBatchCallback<TimelineItem> {
-    private int success = 0;
-    private int failure = 0;
+    /**
+     * Private class to process batch request results.
+     * <p/>
+     * For more information, see
+     * https://code.google.com/p/google-api-java-client/wiki/Batch.
+     */
+    private final class BatchCallback extends JsonBatchCallback<TimelineItem> {
+        private int success = 0;
+        private int failure = 0;
 
-    @Override
-    public void onSuccess(TimelineItem item, HttpHeaders headers) throws IOException {
-      ++success;
-    }
-
-    @Override
-    public void onFailure(GoogleJsonError error, HttpHeaders headers) throws IOException {
-      ++failure;
-      LOG.info("Failed to insert item: " + error.getMessage());
-      // has the user revoked token? if so, delete!
-    }
-  }
-
-  private static final Logger LOG = Logger.getLogger(MainServlet.class.getSimpleName());
-  public static final String CONTACT_NAME = "Magic Crystal Prism";
-
-  /**
-   * Do stuff when buttons on index.jsp are clicked
-   */
-  @Override
-  protected void doPost(HttpServletRequest req, HttpServletResponse res) throws IOException {
-
-    String userId = AuthUtil.getUserId(req);
-    Credential credential = AuthUtil.newAuthorizationCodeFlow().loadCredential(userId);
-    String message = "";
-
-    if (req.getParameter("operation").equals("userInstall")) {
-        // do our bootstrapping stuff for this user
-        NewUserBootstrapper.bootstrapNewUser(req, userId);
-
-        message = "Success! Check your Glass device!";
-
-    } else if (req.getParameter("operation").equals("userUninstall")) {
-
-        //TODO: remove user from system
-        message = "User data removed from system";
-
-    } else if (req.getParameter("operation").equals("insertItem")) {
-      LOG.fine("Inserting Timeline Item");
-      TimelineItem timelineItem = new TimelineItem();
-
-      if (req.getParameter("message") != null) {
-        timelineItem.setText(req.getParameter("message"));
-      }
-
-      // Triggers an audible tone when the timeline item is received
-      timelineItem.setNotification(new NotificationConfig().setLevel("DEFAULT"));
-
-      if (req.getParameter("imageUrl") != null) {
-        // Attach an image, if we have one
-        URL url = new URL(req.getParameter("imageUrl"));
-        String contentType = req.getParameter("contentType");
-        MirrorClient.insertTimelineItem(credential, timelineItem, contentType, url.openStream());
-      } else {
-        MirrorClient.insertTimelineItem(credential, timelineItem);
-      }
-
-      message = "A timeline item has been inserted.";
-
-    } else if (req.getParameter("operation").equals("insertItemWithAction")) {
-      LOG.fine("Inserting Timeline Item");
-      TimelineItem timelineItem = new TimelineItem();
-      timelineItem.setText("Tell me what you had for lunch :)");
-
-      List<MenuItem> menuItemList = new ArrayList<MenuItem>();
-      // Built in actions
-      menuItemList.add(new MenuItem().setAction("REPLY"));
-      menuItemList.add(new MenuItem().setAction("READ_ALOUD"));
-
-      // And custom actions
-      List<MenuValue> menuValues = new ArrayList<MenuValue>();
-      menuValues.add(new MenuValue().setIconUrl(WebUtil.buildUrl(req, "/static/images/drill.png"))
-          .setDisplayName("Drill In"));
-      menuItemList.add(new MenuItem().setValues(menuValues).setId("drill").setAction("CUSTOM"));
-
-      timelineItem.setMenuItems(menuItemList);
-      timelineItem.setNotification(new NotificationConfig().setLevel("DEFAULT"));
-
-      MirrorClient.insertTimelineItem(credential, timelineItem);
-
-      message = "A timeline item with actions has been inserted.";
-
-    } else if (req.getParameter("operation").equals("insertContact")) {
-      if (req.getParameter("iconUrl") == null || req.getParameter("name") == null) {
-        message = "Must specify iconUrl and name to insert contact";
-      } else {
-        // Insert a contact
-        LOG.fine("Inserting contact Item");
-        Contact contact = new Contact();
-        contact.setId(req.getParameter("name"));
-        contact.setDisplayName(req.getParameter("name"));
-        contact.setImageUrls(Lists.newArrayList(req.getParameter("iconUrl")));
-        MirrorClient.insertContact(credential, contact);
-
-        message = "Inserted contact: " + req.getParameter("name");
-      }
-
-    } else if (req.getParameter("operation").equals("deleteContact")) {
-
-      // Insert a contact
-      LOG.fine("Deleting contact Item");
-      MirrorClient.deleteContact(credential, req.getParameter("id"));
-
-      message = "Contact has been deleted.";
-
-    } else if (req.getParameter("operation").equals("insertItemAllUsers")) {
-      if (req.getServerName().contains("glass-java-starter-demo.appspot.com")) {
-        message = "This function is disabled on the demo instance.";
-      }
-
-      // Insert a contact
-      List<String> users = AuthUtil.getAllUserIds();
-      LOG.info("found " + users.size() + " users");
-      if (users.size() > 10) {
-        // We wouldn't want you to run out of quota on your first day!
-        message =
-            "Total user count is " + users.size() + ". Aborting broadcast " + "to save your quota.";
-      } else {
-        TimelineItem allUsersItem = new TimelineItem();
-        allUsersItem.setText("Hello Everyone!");
-
-        BatchRequest batch = MirrorClient.getMirror(null).batch();
-        BatchCallback callback = new BatchCallback();
-
-        // TODO: add a picture of a cat
-        for (String user : users) {
-          Credential userCredential = AuthUtil.getCredential(user);
-          MirrorClient.getMirror(userCredential).timeline().insert(allUsersItem)
-              .queue(batch, callback);
+        @Override
+        public void onSuccess(TimelineItem item, HttpHeaders headers) throws IOException {
+            ++success;
         }
 
-        batch.execute();
-        message =
-            "Successfully sent cards to " + callback.success + " users (" + callback.failure
-                + " failed).";
-      }
-
-
-    } else {
-      String operation = req.getParameter("operation");
-      LOG.warning("Unknown operation specified " + operation);
-      message = "I don't know how to do that";
+        @Override
+        public void onFailure(GoogleJsonError error, HttpHeaders headers) throws IOException {
+            ++failure;
+            LOG.info("Failed to insert item: " + error.getMessage());
+            // has the user revoked token? if so, delete!
+        }
     }
-    WebUtil.setFlash(req, message);
-    res.sendRedirect(WebUtil.buildUrl(req, "/"));
-  }
+
+    private static final Logger LOG = Logger.getLogger(MainServlet.class.getSimpleName());
+    public static final String CONTACT_NAME = "Magic Crystal Prism";
+
+    @Override
+    protected void doGet(HttpServletRequest req, HttpServletResponse res) throws IOException {
+        String userId = AuthUtil.getUserId(req);
+
+    }
+
+    /**
+     * Do stuff when buttons on index.jsp are clicked
+     */
+    @Override
+    protected void doPost(HttpServletRequest req, HttpServletResponse res) throws IOException {
+
+        String userId = AuthUtil.getUserId(req);
+        Credential credential = AuthUtil.newAuthorizationCodeFlow().loadCredential(userId);
+        String message = "";
+
+        if (req.getParameter("operation").equals("userInstall")) {
+            // do our bootstrapping stuff for this user
+            NewUserBootstrapper.bootstrapNewUser(req, userId);
+            AuthUtil.setUserInstalled(req, true);
+            message = "Success! Check your Glass device!";
+
+        } else if (req.getParameter("operation").equals("userUninstall")) {
+
+            //TODO: remove user from system
+            AuthUtil.setUserInstalled(req, false);
+            message = "User data removed from system";
+
+        } else if (req.getParameter("operation").equals("insertItem")) {
+            LOG.fine("Inserting Timeline Item");
+            TimelineItem timelineItem = new TimelineItem();
+
+            if (req.getParameter("message") != null) {
+                timelineItem.setText(req.getParameter("message"));
+            }
+
+            // Triggers an audible tone when the timeline item is received
+            timelineItem.setNotification(new NotificationConfig().setLevel("DEFAULT"));
+
+            if (req.getParameter("imageUrl") != null) {
+                // Attach an image, if we have one
+                URL url = new URL(req.getParameter("imageUrl"));
+                String contentType = req.getParameter("contentType");
+                MirrorClient.insertTimelineItem(credential, timelineItem, contentType, url.openStream());
+            } else {
+                MirrorClient.insertTimelineItem(credential, timelineItem);
+            }
+
+            message = "A timeline item has been inserted.";
+
+        } else if (req.getParameter("operation").equals("insertItemWithAction")) {
+            LOG.fine("Inserting Timeline Item");
+            TimelineItem timelineItem = new TimelineItem();
+            timelineItem.setText("Tell me what you had for lunch :)");
+
+            List<MenuItem> menuItemList = new ArrayList<MenuItem>();
+            // Built in actions
+            menuItemList.add(new MenuItem().setAction("REPLY"));
+            menuItemList.add(new MenuItem().setAction("READ_ALOUD"));
+
+            // And custom actions
+            List<MenuValue> menuValues = new ArrayList<MenuValue>();
+            menuValues.add(new MenuValue().setIconUrl(WebUtil.buildUrl(req, "/static/images/drill.png"))
+                    .setDisplayName("Drill In"));
+            menuItemList.add(new MenuItem().setValues(menuValues).setId("drill").setAction("CUSTOM"));
+
+            timelineItem.setMenuItems(menuItemList);
+            timelineItem.setNotification(new NotificationConfig().setLevel("DEFAULT"));
+
+            MirrorClient.insertTimelineItem(credential, timelineItem);
+
+            message = "A timeline item with actions has been inserted.";
+
+        } else if (req.getParameter("operation").equals("insertContact")) {
+            if (req.getParameter("iconUrl") == null || req.getParameter("name") == null) {
+                message = "Must specify iconUrl and name to insert contact";
+            } else {
+                // Insert a contact
+                LOG.fine("Inserting contact Item");
+                Contact contact = new Contact();
+                contact.setId(req.getParameter("name"));
+                contact.setDisplayName(req.getParameter("name"));
+                contact.setImageUrls(Lists.newArrayList(req.getParameter("iconUrl")));
+                MirrorClient.insertContact(credential, contact);
+
+                message = "Inserted contact: " + req.getParameter("name");
+            }
+
+        } else if (req.getParameter("operation").equals("deleteContact")) {
+
+            // Insert a contact
+            LOG.fine("Deleting contact Item");
+            MirrorClient.deleteContact(credential, req.getParameter("id"));
+
+            message = "Contact has been deleted.";
+
+        } else if (req.getParameter("operation").equals("insertItemAllUsers")) {
+            if (req.getServerName().contains("glass-java-starter-demo.appspot.com")) {
+                message = "This function is disabled on the demo instance.";
+            }
+
+            // Insert a contact
+            List<String> users = AuthUtil.getAllUserIds();
+            LOG.info("found " + users.size() + " users");
+            if (users.size() > 10) {
+                // We wouldn't want you to run out of quota on your first day!
+                message =
+                        "Total user count is " + users.size() + ". Aborting broadcast " + "to save your quota.";
+            } else {
+                TimelineItem allUsersItem = new TimelineItem();
+                allUsersItem.setText("Hello Everyone!");
+
+                BatchRequest batch = MirrorClient.getMirror(null).batch();
+                BatchCallback callback = new BatchCallback();
+
+                // TODO: add a picture of a cat
+                for (String user : users) {
+                    Credential userCredential = AuthUtil.getCredential(user);
+                    MirrorClient.getMirror(userCredential).timeline().insert(allUsersItem)
+                            .queue(batch, callback);
+                }
+
+                batch.execute();
+                message =
+                        "Successfully sent cards to " + callback.success + " users (" + callback.failure
+                                + " failed).";
+            }
+
+
+        } else {
+            String operation = req.getParameter("operation");
+            LOG.warning("Unknown operation specified " + operation);
+            message = "I don't know how to do that";
+        }
+        WebUtil.setFlash(req, message);
+        res.sendRedirect(WebUtil.buildUrl(req, "/"));
+    }
 }

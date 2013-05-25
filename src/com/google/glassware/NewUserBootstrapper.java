@@ -32,6 +32,9 @@ import javax.servlet.http.HttpServletRequest;
  * Utility functions used when users first authenticate with this service
  * 
  * @author Jenny Murphy - http://google.com/+JennyMurphy
+ *
+ * very slightly modified by:
+ * @author Mitchell Barry - http://plus.google.com/109697731481348133983
  */
 public class NewUserBootstrapper {
   private static final Logger LOG = Logger.getLogger(NewUserBootstrapper.class.getSimpleName());

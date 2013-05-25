@@ -33,66 +33,105 @@ import javax.servlet.http.HttpSession;
 /**
  * A collection of utility functions that simplify common authentication and
  * user identity tasks
- * 
+ *
  * @author Jenny Murphy - http://google.com/+JennyMurphy
+ *
+ * very slightly modified by:
+ * @author Mitchell Barry - http://plus.google.com/109697731481348133983
  */
 public class AuthUtil {
-  public static final String GLASS_SCOPE = "https://www.googleapis.com/auth/glass.timeline "
-      + "https://www.googleapis.com/auth/userinfo.profile";
+    public static final String GLASS_SCOPE = "https://www.googleapis.com/auth/glass.timeline "
+            + "https://www.googleapis.com/auth/userinfo.profile";
 
-  /**
-   * Creates and returns a new {@link AuthorizationCodeFlow} for this app.
-   */
-  public static AuthorizationCodeFlow newAuthorizationCodeFlow() throws IOException {
-    FileInputStream authPropertiesStream = new FileInputStream("oauth.properties");
-    Properties authProperties = new Properties();
-    authProperties.load(authPropertiesStream);
+    /**
+     * Creates and returns a new {@link AuthorizationCodeFlow} for this app.
+     */
+    public static AuthorizationCodeFlow newAuthorizationCodeFlow() throws IOException {
+        FileInputStream authPropertiesStream = new FileInputStream("oauth.properties");
+        Properties authProperties = new Properties();
+        authProperties.load(authPropertiesStream);
 
-    String clientId = authProperties.getProperty("client_id");
-    String clientSecret = authProperties.getProperty("client_secret");
+        String clientId = authProperties.getProperty("client_id");
+        String clientSecret = authProperties.getProperty("client_secret");
 
-    return new GoogleAuthorizationCodeFlow.Builder(new UrlFetchTransport(), new JacksonFactory(),
-        clientId, clientSecret, Collections.singleton(GLASS_SCOPE)).setAccessType("offline")
-        .setCredentialStore(new ListableAppEngineCredentialStore()).build();
-  }
-
-  /**
-   * Get the current user's ID from the session
-   * 
-   * @return string user id or null if no one is logged in
-   */
-  public static String getUserId(HttpServletRequest request) {
-    HttpSession session = request.getSession();
-    return (String) session.getAttribute("userId");
-  }
-
-  public static void setUserId(HttpServletRequest request, String userId) {
-    HttpSession session = request.getSession();
-    session.setAttribute("userId", userId);
-  }
-
-  public static void clearUserId(HttpServletRequest request) throws IOException {
-    // Delete the credential in the credential store
-    String userId = getUserId(request);
-    new ListableAppEngineCredentialStore().delete(userId, getCredential(userId));
-
-    // Remove their ID from the local session
-    request.getSession().removeAttribute("userId");
-  }
-
-  public static Credential getCredential(String userId) throws IOException {
-    if (userId == null) {
-      return null;
-    } else {
-      return AuthUtil.newAuthorizationCodeFlow().loadCredential(userId);
+        return new GoogleAuthorizationCodeFlow.Builder(new UrlFetchTransport(), new JacksonFactory(),
+                clientId, clientSecret, Collections.singleton(GLASS_SCOPE)).setAccessType("offline")
+                .setCredentialStore(new ListableAppEngineCredentialStore()).build();
     }
-  }
 
-  public static Credential getCredential(HttpServletRequest req) throws IOException {
-    return AuthUtil.newAuthorizationCodeFlow().loadCredential(getUserId(req));
-  }
+    /**
+     * Get the current user's ID from the session
+     *
+     * @return string user id or null if no one is logged in
+     */
+    public static String getUserId(HttpServletRequest request) {
+        HttpSession session = request.getSession();
+        return (String) session.getAttribute("userId");
+    }
 
-  public static List<String> getAllUserIds() {
-    return new ListableAppEngineCredentialStore().listAllUsers();
-  }
+    public static void setUserId(HttpServletRequest request, String userId) {
+        HttpSession session = request.getSession();
+        session.setAttribute("userId", userId);
+    }
+
+    public static Boolean setUserInstalledFromStorage(HttpServletRequest request, String userId) {
+        Boolean installed = false;
+        if (getAllUserIds().contains(userId))
+            installed = true;
+        setUserInstalled(request, installed);
+        return installed;
+    }
+
+    /**
+     * A simple way to grab whether or not currently logged in user
+     * has already installed this Glassware
+     *
+     * @param request
+     * @param userId
+     * @return
+     */
+    public static Boolean hasUserInstalled(HttpServletRequest request, String userId) {
+        Boolean installed = false;
+        HttpSession session = request.getSession();
+        if (session.getAttribute("installed") != null) {
+            installed = (Boolean) session.getAttribute("installed");
+        } else if (getAllUserIds().contains(userId)) {
+            installed = true;
+            setUserInstalled(request, true);
+        } else {
+            setUserInstalled(request, false);
+        }
+        return installed;
+    }
+
+    public static Boolean setUserInstalled(HttpServletRequest request, Boolean installed) {
+        HttpSession session = request.getSession();
+        session.setAttribute("installed", installed);
+        return installed;
+    }
+
+    public static void clearUserId(HttpServletRequest request) throws IOException {
+        // Delete the credential in the credential store
+        String userId = getUserId(request);
+        new ListableAppEngineCredentialStore().delete(userId, getCredential(userId));
+
+        // Remove their ID from the local session
+        request.getSession().removeAttribute("userId");
+    }
+
+    public static Credential getCredential(String userId) throws IOException {
+        if (userId == null) {
+            return null;
+        } else {
+            return AuthUtil.newAuthorizationCodeFlow().loadCredential(userId);
+        }
+    }
+
+    public static Credential getCredential(HttpServletRequest req) throws IOException {
+        return AuthUtil.newAuthorizationCodeFlow().loadCredential(getUserId(req));
+    }
+
+    public static List<String> getAllUserIds() {
+        return new ListableAppEngineCredentialStore().listAllUsers();
+    }
 }

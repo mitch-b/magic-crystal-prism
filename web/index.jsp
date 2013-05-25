@@ -17,12 +17,12 @@ limitations under the License.
 <%@ page import="com.google.api.services.mirror.model.Contact" %>
 <%@ page import="com.google.glassware.MirrorClient" %>
 <%@ page import="com.google.glassware.WebUtil" %>
-<%@ page
-        import="java.util.List" %>
+<%@ page import="java.util.List" %>
 <%@ page import="com.google.api.services.mirror.model.TimelineItem" %>
 <%@ page import="com.google.api.services.mirror.model.Subscription" %>
 <%@ page import="com.google.api.services.mirror.model.Attachment" %>
 <%@ page import="com.mitchbarry.glassware.magiccrystalprism.MainServlet" %>
+<%@ page import="com.google.glassware.AuthUtil" %>
 
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
 
@@ -30,13 +30,8 @@ limitations under the License.
 <%
     String userId = com.google.glassware.AuthUtil.getUserId(request);
     String appBaseUrl = WebUtil.buildUrl(request, "/");
-
     Credential credential = com.google.glassware.AuthUtil.getCredential(userId);
-
     Contact contact = MirrorClient.getContact(credential, MainServlet.CONTACT_NAME);
-
-    List<TimelineItem> timelineItems = MirrorClient.listItems(credential, 3L).getItems();
-
 %>
 <html>
 <head>
@@ -98,16 +93,19 @@ limitations under the License.
         <% } %>
 
         <p style="width:55%;">
-            <!-- TODO: check to see if user already exists, then switch on button -->
-            <form action="<%= WebUtil.buildUrl(request, "/main") %>" method="post" style="display: inline;">
-                <input type="hidden" name="operation" value="userInstall">
-                <button class="btnGreen" type="submit">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Install Glassware&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</button>
-            </form>
-            -----
-            <form action="<%= WebUtil.buildUrl(request, "/main") %>" method="post" style="display: inline;">
-                <input type="hidden" name="operation" value="userUninstall">
-                <button class="btnRed" type="submit">Uninstall Glassware</button>
-            </form>
+            <% Boolean installed = AuthUtil.hasUserInstalled(request, userId);
+            if (!installed) {
+            %>
+                <form action="<%= WebUtil.buildUrl(request, "/main") %>" method="post" style="display: inline;">
+                    <input type="hidden" name="operation" value="userInstall">
+                    <button class="btnGreen" type="submit">Install Glassware</button>
+                </form>
+            <% } else { %>
+                <form action="<%= WebUtil.buildUrl(request, "/main") %>" method="post" style="display: inline;">
+                    <input type="hidden" name="operation" value="userUninstall">
+                    <button class="btnRed" type="submit">Uninstall Glassware</button>
+                </form>
+            <% } %>
         </p>
         <div style="clear:both;"></div>
     </div>
