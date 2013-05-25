@@ -3,3 +3,7 @@
 # Package Files #
 *.war
 *.ear
+
+# Maven and build folder defaults #
+web/WEB-INF/lib/*.jar
+out/**
