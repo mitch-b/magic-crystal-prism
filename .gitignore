@@ -8,5 +8,6 @@
 web/WEB-INF/lib/*.jar
 out/**
 
-# IntelliJ Workspace Settings #
-.idea/workspace.xml
+# IntelliJ Settings #
+*/.idea/workspace.xml
+*/.idea/tasks.xml
