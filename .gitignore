@@ -12,3 +12,6 @@ out/**
 .idea/workspace.xml
 .idea/tasks.xml
 .idea/dictionaries/**
+
+# Implementation Specific Settings #
+web/oauth.properties
