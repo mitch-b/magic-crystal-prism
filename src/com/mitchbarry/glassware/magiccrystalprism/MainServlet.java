@@ -67,6 +67,7 @@ public class MainServlet extends HttpServlet {
             ++failure;
             LOG.info("Failed to insert item: " + error.getMessage());
             // has the user revoked token? if so, delete!
+
         }
     }
 
@@ -75,7 +76,6 @@ public class MainServlet extends HttpServlet {
 
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse res) throws IOException {
-        String userId = AuthUtil.getUserId(req);
 
     }
 
@@ -97,7 +97,7 @@ public class MainServlet extends HttpServlet {
 
         } else if (req.getParameter("operation").equals("userUninstall")) {
 
-            //TODO: remove user from system
+            AuthUtil.deleteUserCredential(userId);
             AuthUtil.setUserInstalled(req, false);
             message = "User data removed from system";
 

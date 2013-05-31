@@ -134,4 +134,16 @@ public class AuthUtil {
     public static List<String> getAllUserIds() {
         return new ListableAppEngineCredentialStore().listAllUsers();
     }
+
+    public static boolean deleteUserCredential(String userId) {
+        boolean rval = false;
+        try {
+            AuthUtil.newAuthorizationCodeFlow().getCredentialStore().delete(userId, getCredential(userId));
+            rval = true;
+        } catch (IOException ioe) {
+            // IOException reading DataStore
+        }
+
+        return rval;
+    }
 }
