@@ -15,3 +15,4 @@ out/**
 
 # Implementation Specific Settings #
 web/oauth.properties
+# or, "git update-index --assume-unchanged web/oauth.properties" #
